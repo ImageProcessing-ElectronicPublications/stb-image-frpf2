@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 2.8)
+project(stbimfrpf2)
+add_compile_options(-O3)
+include_directories(src)
+add_executable(stbimfrpf2 src/stbimfrpf2.c src/dependencies.c)
+target_link_libraries(stbimfrpf2 m)

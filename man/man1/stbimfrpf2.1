@@ -1,0 +1,39 @@
+.TH "StbImFRPF2" 1 1.0 "27 Jan 2023" "User Manual"
+
+.SH NAME
+stbimfrpf2
+
+.SH DESCRIPTION
+The image is scaled using "Find Replicant Pixel Fast".
+
+.SH SYNOPSIS
+stbimfrpf2 ${IMAGE_PATH} ${IMAGE_PATH}.out.png
+
+.SH OPTIONS
+.TP
+-h
+show this help message and exit
+
+.SH EXAMPLE
+stbimfrpf2 butterfly.png butterfly.x2frpf2.png 
+ 
+ Load: butterfly.png
+ image: 256x256:3
+ process: downsample
+ process: gradient
+ process: FRPF2
+ Save png: butterfly.x2frpf2.png
+
+.SH COPYRIGHT
+This is free and unencumbered software released into the public domain.
+
+.SH SEE ALSO
+convert(1), gm(1), imagew(1), stbresize(1), stbsrcnn(1)
+
+.SH CONTACTS
+Website: https://github.com/ImageProcessing-ElectronicPublications/stb-image-frpf2
+
+.SH LINKS
+ [imageworsener](https://github.com/ImageProcessing-ElectronicPublications/imageworsener)
+ [stb-image-resize](https://github.com/ImageProcessing-ElectronicPublications/stb-image-resize)
+ [stb-image-srcnn](https://github.com/ImageProcessing-ElectronicPublications/stb-image-srcnn)
