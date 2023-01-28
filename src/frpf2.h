@@ -8,7 +8,7 @@ Find Replicant Pixel Fast
 #ifndef FRPF2_H_
 #define FRPF2_H_
 
-#define FRPF2_VERSION "1.0"
+#define FRPF2_VERSION "1.1"
 
 #ifdef FRPF2_STATIC
 #define FRPF2API static
@@ -22,7 +22,7 @@ extern "C" {
 
 FRPF2API void ImageResizeMean2 (unsigned char *src, int height, int width, int channels, unsigned char *res);
 FRPF2API void ImageGradient (unsigned char *src, int height, int width, int channels, int *res);
-FRPF2API void ImageFRPF2 (unsigned char *src, unsigned char *frp, int *gsrc, int *gfrp, int height, int width, int channels, unsigned char *res);
+FRPF2API void ImageFRPF2 (unsigned char *src, unsigned char *frp, int *gsrc, int *gfrp, int height, int width, int channels, int radius, int threshold, unsigned char *res);
 
 #ifdef __cplusplus
 }
@@ -183,23 +183,28 @@ input:
 buf - unsigned char* image (height * width * channels)
 frp - unsigned char* image (height/2 * width/2 * channels)
 gscr - int* gradient (height * width * channels * 4)
+gfrp - int* gradient (height/2 * width/2 * channels * 4)
+radius - radius find (deault 0 - all)
+threshold - threshold find (default 0)
 
 output:
 res - int* gradient (height * width * channels)
 
 Use:
-ImageFRP2(buf, width, height, channels, res);
+ImageFRP2(buf, frp, gscr, gfrp, width, height, channels, radius, threshold, res);
 */
 
-FRPF2API void ImageFRPF2 (unsigned char *src, unsigned char *frp, int *gsrc, int *gfrp, int height, int width, int channels, unsigned char *res)
+FRPF2API void ImageFRPF2 (unsigned char *src, unsigned char *frp, int *gsrc, int *gfrp, int height, int width, int channels, int radius, int threshold, unsigned char *res)
 {
     unsigned int y, x, d, l, heightt, widtht, heightf, widthf;
+    int y0, x0, y1, x1;
     int xf, yf, xp, yp, xs, ys, xt, yt, im0, img, im, imp, imd;
     int g, gx, gy, gz, gf, gfx, gfy, gfz, gd, gdmin, gs;
     int ga, gxa, gya, gza, gfa, gfxa, gfya, gfza;
     int z, zy, zx, zz[4];
-    size_t k, kf, kp, ks, kt, line, linep, linet;
+    size_t k, kf, kfl, kp, ks, kt, line, linep, linet;
 
+    if (radius < 0) return;
     heightt = height * 2;
     widtht = width * 2;
     heightf = height / 2;
@@ -210,8 +215,16 @@ FRPF2API void ImageFRPF2 (unsigned char *src, unsigned char *frp, int *gsrc, int
     k = 0;
     for (y = 0; y < height; y++)
     {
+        y0 = y / 2 - radius;
+        y1 = (y + 1) / 2 + radius + 1;
+        y0 = (radius == 0) ? 0 : (y0 < 0) ? 0 : (y0 < heightf) ? y0 : heightf;
+        y1 = (radius == 0) ? heightf : (y1 < 0) ? 0 : (y1 < heightf) ? y1 : heightf;
         for (x = 0; x < width; x++)
         {
+            x0 = x / 2 - radius;
+            x1 = (x + 1) / 2 + radius + 1;
+            x0 = (radius == 0) ? 0 : (x0 < 0) ? 0 : (x0 < widthf) ? x0 : widthf;
+            x1 = (radius == 0) ? widthf : (x1 < 0) ? 0 : (x1 < widthf) ? x1 : widthf;
             for (d = 0; d < channels; d++)
             {
                 im0 = src[k];
@@ -225,38 +238,48 @@ FRPF2API void ImageFRPF2 (unsigned char *src, unsigned char *frp, int *gsrc, int
                 gya = (gy < 0) ? -gy : gy;
                 gxa = (gx < 0) ? -gx : gx;
                 gza = (gz < 0) ? -gz : gz;
-                for (kf = d; kf < (linep * heightf); kf += channels)
+                kf = 0;
+                for (yf = y0; yf < y1; yf++)
                 {
-                    gs = 0;
-                    gf = gfrp[kf + kf + kf + kf];
-                    gfy = gfrp[kf + kf + kf + kf + 1];
-                    gfx = gfrp[kf + kf + kf + kf + 2];
-                    gfz = gfrp[kf + kf + kf + kf + 3];
-                    gfa = (gf < 0) ? -gf : gf;
-                    gfya = (gfy < 0) ? -gfy : gfy;
-                    gfxa = (gfx < 0) ? -gfx : gfx;
-                    gfza = (gfz < 0) ? -gfz : gfz;
-                    gd = (ga > gfa) ? (ga - gfa) : (gfa - ga);
-                    gs += gd;
-                    gd = (gya > gfya) ? (gya - gfya) : (gfya - gya);
-                    gs += gd;
-                    gd = (gxa > gfxa) ? (gxa - gfxa) : (gfxa - gxa);
-                    gs += gd;
-                    gd = (gza > gfza) ? (gza - gfza) : (gfza - gza);
-                    gs += gd;
-
-                    if (gs < gdmin)
+                    kfl = (widthf * yf + x0) * channels + d;
+                    kf = kfl;
+                    for (xf = x0; xf < x1; xf++)
                     {
-                        gdmin = gs;
-                        z = g * gf;
-                        zy = gy * gfy;
-                        zx = gx * gfx;
-                        kp = kf;
+                        gs = 0;
+                        gf = gfrp[kf + kf + kf + kf];
+                        gfy = gfrp[kf + kf + kf + kf + 1];
+                        gfx = gfrp[kf + kf + kf + kf + 2];
+                        gfz = gfrp[kf + kf + kf + kf + 3];
+                        gfa = (gf < 0) ? -gf : gf;
+                        gfya = (gfy < 0) ? -gfy : gfy;
+                        gfxa = (gfx < 0) ? -gfx : gfx;
+                        gfza = (gfz < 0) ? -gfz : gfz;
+                        gd = (ga > gfa) ? (ga - gfa) : (gfa - ga);
+                        gs += gd;
+                        gd = (gya > gfya) ? (gya - gfya) : (gfya - gya);
+                        gs += gd;
+                        gd = (gxa > gfxa) ? (gxa - gfxa) : (gfxa - gxa);
+                        gs += gd;
+                        gd = (gza > gfza) ? (gza - gfza) : (gfza - gza);
+                        gs += gd;
+
+                        if (gs < gdmin)
+                        {
+                            gdmin = gs;
+                            z = g * gf;
+                            zy = gy * gfy;
+                            zx = gx * gfx;
+                            yp = yf;
+                            xp = xf;
+                            kp = kf;
+                        }
+                        kf += channels;
+                        if (gs <= threshold) break;
                     }
-                    if (gs == 0) break;
+                    if (gs <= threshold) break;
                 }
-                yp = kp / linep;
-                xp = (kp - yp * linep) / channels;
+                //yp = kp / linep;
+                //xp = (kp - yp * linep) / channels;
 
                 kf = kp;
                 imp = frp[kp];

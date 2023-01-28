@@ -1,4 +1,4 @@
-.TH "StbImFRPF2" 1 1.0 "27 Jan 2023" "User Manual"
+.TH "StbImFRPF2" 1 1.1 "28 Jan 2023" "User Manual"
 
 .SH NAME
 stbimfrpf2
@@ -11,6 +11,12 @@ stbimfrpf2 ${IMAGE_PATH} ${IMAGE_PATH}.out.png
 
 .SH OPTIONS
 .TP
+-r NUM
+radius find (0 - all, default 0)
+.TP
+-t NUM
+threshold find (default 0)
+.TP
 -h
 show this help message and exit
 
@@ -22,6 +28,8 @@ stbimfrpf2 butterfly.png butterfly.x2frpf2.png
  process: downsample
  process: gradient
  process: FRPF2
+  region: all
+  threshold: 0
  Save png: butterfly.x2frpf2.png
 
 .SH COPYRIGHT

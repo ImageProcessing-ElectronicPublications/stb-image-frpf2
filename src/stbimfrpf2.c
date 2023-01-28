@@ -9,11 +9,13 @@
 #include <stb/stb_image_write.h>
 #include "frpf2.h"
 
-void frp2_usage(char* prog)
+void frp2_usage(char* prog, int radius, int threshold)
 {
     printf("StbFRPF2 version %s.\n", FRPF2_VERSION);
     printf("usage: %s [options] image_in out.png\n", prog);
     printf("options:\n");
+    printf("  -r NUM    radius find (0 - all, default %d)\n", radius);
+    printf("  -t NUM    threshold find (default %d)\n", threshold);
     printf("  -h        show this help message and exit\n");
 }
 
@@ -21,6 +23,8 @@ int main(int argc, char **argv)
 {
     unsigned int height, width, channels, y, x, d;
     unsigned int heightr, widthr, heightf, widthf;
+    int radius = 0;
+    int threshold = 0;
     int fhelp = 0;
     int opt;
     size_t ki, kd;
@@ -28,10 +32,26 @@ int main(int argc, char **argv)
     int *gdata = NULL, *gfrp = NULL;
     stbi_uc *img = NULL;
 
-    while ((opt = getopt(argc, argv, ":h")) != -1)
+    while ((opt = getopt(argc, argv, ":r:t:h")) != -1)
     {
         switch(opt)
         {
+        case 'r':
+            radius = atoi(optarg);
+            if (radius < 0)
+            {
+                fprintf(stderr, "ERROR: bad radius: %d\n", radius);
+                return 2;
+            }
+            break;
+        case 't':
+            threshold = atoi(optarg);
+            if (threshold < 0)
+            {
+                fprintf(stderr, "ERROR: bad threshold: %d\n", threshold);
+                return 2;
+            }
+            break;
         case 'h':
             fhelp = 1;
             break;
@@ -47,7 +67,7 @@ int main(int argc, char **argv)
     }
     if(optind + 2 > argc || fhelp)
     {
-        frp2_usage(argv[0]);
+        frp2_usage(argv[0], radius, threshold);
         return 0;
     }
     const char *src_name = argv[optind];
@@ -112,8 +132,13 @@ int main(int argc, char **argv)
     ImageGradient (data, height, width, channels, gdata);
     ImageGradient (frp, heightf, widthf, channels, gfrp);
     printf("process: FRPF2\n");
-    ImageFRPF2 (data, frp, gdata, gfrp, height, width, channels, resize);
-    
+    if (radius == 0)
+        printf(" region: all\n");
+    else
+        printf(" region: %dx%d\n", (2 * radius + 1), (2 * radius + 1));
+        printf(" threshold: %d\n", threshold);
+    ImageFRPF2 (data, frp, gdata, gfrp, height, width, channels, radius, threshold, resize);
+
     printf("Save png: %s\n", dst_name);
     if (!(stbi_write_png(dst_name, widthr, heightr, channels, resize, widthr * channels)))
     {
