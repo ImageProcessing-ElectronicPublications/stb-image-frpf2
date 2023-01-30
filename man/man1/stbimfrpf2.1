@@ -1,4 +1,4 @@
-.TH "StbImFRPF2" 1 1.1 "28 Jan 2023" "User Manual"
+.TH "StbImFRPF2" 1 1.2 "30 Jan 2023" "User Manual"
 
 .SH NAME
 stbimfrpf2
@@ -10,6 +10,9 @@ The image is scaled using "Find Replicant Pixel Fast".
 stbimfrpf2 ${IMAGE_PATH} ${IMAGE_PATH}.out.png
 
 .SH OPTIONS
+.TP
+-m N.N
+mix pixel (default 0.75)
 .TP
 -r NUM
 radius find (0 - all, default 0)
@@ -30,6 +33,7 @@ stbimfrpf2 butterfly.png butterfly.x2frpf2.png
  process: FRPF2
   region: all
   threshold: 0
+  mix: 0.700000
  Save png: butterfly.x2frpf2.png
 
 .SH COPYRIGHT

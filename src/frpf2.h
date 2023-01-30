@@ -8,7 +8,7 @@ Find Replicant Pixel Fast
 #ifndef FRPF2_H_
 #define FRPF2_H_
 
-#define FRPF2_VERSION "1.1"
+#define FRPF2_VERSION "1.2"
 
 #ifdef FRPF2_STATIC
 #define FRPF2API static
@@ -22,7 +22,7 @@ extern "C" {
 
 FRPF2API void ImageResizeMean2 (unsigned char *src, int height, int width, int channels, unsigned char *res);
 FRPF2API void ImageGradient (unsigned char *src, int height, int width, int channels, int *res);
-FRPF2API void ImageFRPF2 (unsigned char *src, unsigned char *frp, int *gsrc, int *gfrp, int height, int width, int channels, int radius, int threshold, unsigned char *res);
+FRPF2API void ImageFRPF2 (unsigned char *src, unsigned char *frp, int *gsrc, int *gfrp, int height, int width, int channels, int radius, int threshold, float mixpix, unsigned char *res);
 
 #ifdef __cplusplus
 }
@@ -75,7 +75,8 @@ FRPF2API void ImageResizeMean2 (unsigned char *src, int height, int width, int c
                         n++;
                     }
                 }
-                sum = (n > 0) ? ((sum + n / 2) / n) : 0;
+                n = (n > 0) ? n : 1;
+                sum = (sum + n / 2) / n;
                 res[k] = (unsigned char)((sum < 0) ? 0 : (sum < 255) ? sum : 255);
                 k += channels;
             }
@@ -186,15 +187,16 @@ gscr - int* gradient (height * width * channels * 4)
 gfrp - int* gradient (height/2 * width/2 * channels * 4)
 radius - radius find (deault 0 - all)
 threshold - threshold find (default 0)
+mixpix - mix pixel (default 0.7f)
 
 output:
 res - int* gradient (height * width * channels)
 
 Use:
-ImageFRP2(buf, frp, gscr, gfrp, width, height, channels, radius, threshold, res);
+ImageFRP2(buf, frp, gscr, gfrp, width, height, channels, radius, threshold, mixpix, res);
 */
 
-FRPF2API void ImageFRPF2 (unsigned char *src, unsigned char *frp, int *gsrc, int *gfrp, int height, int width, int channels, int radius, int threshold, unsigned char *res)
+FRPF2API void ImageFRPF2 (unsigned char *src, unsigned char *frp, int *gsrc, int *gfrp, int height, int width, int channels, int radius, int threshold, float mixpix, unsigned char *res)
 {
     unsigned int y, x, d, l, heightt, widtht, heightf, widthf;
     int y0, x0, y1, x1;
@@ -299,6 +301,7 @@ FRPF2API void ImageFRPF2 (unsigned char *src, unsigned char *frp, int *gsrc, int
                 for (l = 0; l < 4; l++)
                 {
                     zz[l] -= imp;
+                    zz[l] = (int)((float)zz[l] * mixpix + 0.5f);
                 }
                 if (z < 0)
                 {
